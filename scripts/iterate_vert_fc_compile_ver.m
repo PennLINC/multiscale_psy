@@ -6,7 +6,7 @@ ProjectFolder = '/cbica/projects/pinesParcels/data/SingleParcellation';
 ProjectFolder_psy = '/cbica/projects/pinesParcels/data_psy/SingleParcellation';
 % What is K range to iterate over?
 % I'll tell you hwhat
-Krange=2:25;
+Krange=2:30;
 % Read in subjects list
 subjs=load('/cbica/projects/pinesParcels/data_psy/NewPsySubjs.txt');
 % read in group partitions

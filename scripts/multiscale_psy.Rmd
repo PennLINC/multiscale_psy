@@ -22,54 +22,252 @@ library(viridis)
 
 # First for effect size, we take the difference in adjusted R^2 between a model that includes an age term and a model that does not - essentially, we are using two models to estimate the variance in subject-level data explained by age. To derive the directionality of this effect, we fit a linear model (partial correlation) and match the sign of the age effect (+ or -) to the size of the age effect(delta adjusted R^2). In this case, the directionality tells us whether FC tends to goes up or down with age.
 
-# difference in R2
-DeltaR2EstVec<-function(x){
+# OVERALL
+# FEAR
+# ANX-MIS
+# PSYCHOSIS
+# EXTERN
+
+DeltaR2EstVec_OV<-function(x){
   
   # relevant df
-  scaledf<-data.frame(cbind(as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
-  colnames(scaledf)<-c('Age','Sex','Motion','varofint')
+  scaledf<-data.frame(cbind(as.numeric(masterdf$overall_psychopathology_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('overall_psychopathology_4factorv2','Age','Sex','Motion','varofint')
   
-  # no-age model (segreg ~ sex + motion)
-  noAgeGam<-gam(varofint~Sex+Motion,data=scaledf)
-  noAgeSum<-summary(noAgeGam)
-  # age-included model for measuring difference
-  AgeGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
-  AgeSum<-summary(AgeGam)
+  # no-Td model (b.w. ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  noTdSum<-summary(noTdGam)
+  # Td-included model for measuring difference
+  TdGam<-gam(varofint~overall_psychopathology_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  TdSum<-summary(TdGam)
   
-  dif<-AgeSum$r.sq-noAgeSum$r.sq
+  dif<-TdSum$r.sq-noTdSum$r.sq
   
-  # partial spearmans to extract age relation (for direction)
+  # partial spearmans to extract EF relation (for direction)
   pspear=pcor(scaledf,method='spearman')$estimate
-  corest<-pspear[4]
+  corest<-pspear[5]
   if(corest<0){
     dif=dif*-1
   }
   
   return(dif)
-  
+
 }
 
 # Next, to derive the statistical significance of observed age effects, we need to test if the two models (one with an age term, one without) are significantly different. We use an ANOVA for this procedure. These p-values will eventually be FDR-corrected.
 
 # chisq test sig. output
-DeltaPEstVec<-function(x){
+DeltaPEstVec_OV<-function(x){
   
-  # relevant df
-  scaledf<-data.frame(cbind(as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
-  colnames(scaledf)<-c('Age','Sex','Motion','varofint')
+    # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$overall_psychopathology_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('overall_psychopathology_4factorv2','Age','Sex','Motion','varofint')
   
-  # no-age model (segreg ~ sex + motion)
-  noAgeGam<-gam(varofint~Sex+Motion,data=scaledf)
-  # age-included model for measuring difference
-  AgeGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  # no-EF model (segreg ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  # EF-included model for measuring difference
+  TdGam<-gam(varofint~overall_psychopathology_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
   
   # test of dif with anova.gam
-  anovaRes<-anova.gam(noAgeGam,AgeGam,test='Chisq')
+  anovaRes<-anova.gam(noTdGam,TdGam,test='Chisq')
   anovaP<-anovaRes$`Pr(>Chi)`
   anovaP2<-unlist(anovaP)
   return(anovaP2[2])
-  
 }
+
+
+# difference in R2
+DeltaR2EstVec_FE<-function(x){
+  
+  # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$phobias_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('phobias_4factorv2','Age','Sex','Motion','varofint')
+  
+  # no-Td model (b.w. ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  noTdSum<-summary(noTdGam)
+  # Td-included model for measuring difference
+  TdGam<-gam(varofint~phobias_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  TdSum<-summary(TdGam)
+  
+  dif<-TdSum$r.sq-noTdSum$r.sq
+  
+  # partial spearmans to extract EF relation (for direction)
+  pspear=pcor(scaledf,method='spearman')$estimate
+  corest<-pspear[5]
+  if(corest<0){
+    dif=dif*-1
+  }
+  
+  return(dif)
+
+}
+
+# chisq test sig. output
+DeltaPEstVec_FE<-function(x){
+  
+    # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$phobias_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('phobias_4factorv2','Age','Sex','Motion','varofint')
+  
+  # no-EF model (segreg ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  # EF-included model for measuring difference
+  TdGam<-gam(varofint~phobias_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  
+  # test of dif with anova.gam
+  anovaRes<-anova.gam(noTdGam,TdGam,test='Chisq')
+  anovaP<-anovaRes$`Pr(>Chi)`
+  anovaP2<-unlist(anovaP)
+  return(anovaP2[2])
+
+}
+DeltaR2EstVec_AM<-function(x){
+  
+  # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$mood_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('mood_4factorv2','Age','Sex','Motion','varofint')
+  
+  # no-Td model (b.w. ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  noTdSum<-summary(noTdGam)
+  # Td-included model for measuring difference
+  TdGam<-gam(varofint~mood_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  TdSum<-summary(TdGam)
+  
+  dif<-TdSum$r.sq-noTdSum$r.sq
+  
+  # partial spearmans to extract EF relation (for direction)
+  pspear=pcor(scaledf,method='spearman')$estimate
+  corest<-pspear[5]
+  if(corest<0){
+    dif=dif*-1
+  }
+  
+  return(dif)
+
+}
+
+# chisq test sig. output
+DeltaPEstVec_AM<-function(x){
+  
+    # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$mood_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('mood_4factorv2','Age','Sex','Motion','varofint')
+  
+  # no-EF model (segreg ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  # EF-included model for measuring difference
+  TdGam<-gam(varofint~mood_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  
+  # test of dif with anova.gam
+  anovaRes<-anova.gam(noTdGam,TdGam,test='Chisq')
+  anovaP<-anovaRes$`Pr(>Chi)`
+  anovaP2<-unlist(anovaP)
+  return(anovaP2[2])
+
+}
+# Next, to derive the statistical significance of observed age effects, we need to test if the two models (one with an age term, one without) are significantly different. We use an ANOVA for this procedure. These p-values will eventually be FDR-corrected.
+
+# chisq test sig. output
+DeltaR2EstVec_PS<-function(x){
+  
+  # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$psychosis_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('psychosis_4factorv2','Age','Sex','Motion','varofint')
+  
+  # no-Td model (b.w. ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  noTdSum<-summary(noTdGam)
+  # Td-included model for measuring difference
+  TdGam<-gam(varofint~psychosis_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  TdSum<-summary(TdGam)
+  
+  dif<-TdSum$r.sq-noTdSum$r.sq
+  
+  # partial spearmans to extract EF relation (for direction)
+  pspear=pcor(scaledf,method='spearman')$estimate
+  corest<-pspear[5]
+  if(corest<0){
+    dif=dif*-1
+  }
+  
+  return(dif)
+
+}
+
+# Next, to derive the statistical significance of observed age effects, we need to test if the two models (one with an age term, one without) are significantly different. We use an ANOVA for this procedure. These p-values will eventually be FDR-corrected.
+
+# chisq test sig. output
+DeltaPEstVec_PS<-function(x){
+  
+    # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$psychosis_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('psychosis_4factorv2','Age','Sex','Motion','varofint')
+  
+  # no-EF model (segreg ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  # EF-included model for measuring difference
+  TdGam<-gam(varofint~psychosis_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  
+  # test of dif with anova.gam
+  anovaRes<-anova.gam(noTdGam,TdGam,test='Chisq')
+  anovaP<-anovaRes$`Pr(>Chi)`
+  anovaP2<-unlist(anovaP)
+  return(anovaP2[2])
+}
+
+DeltaR2EstVec_EX<-function(x){
+  
+  # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$externalizing_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('externalizing_4factorv2','Age','Sex','Motion','varofint')
+  
+  # no-Td model (b.w. ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  noTdSum<-summary(noTdGam)
+  # Td-included model for measuring difference
+  TdGam<-gam(varofint~externalizing_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  TdSum<-summary(TdGam)
+  
+  dif<-TdSum$r.sq-noTdSum$r.sq
+  
+  # partial spearmans to extract EF relation (for direction)
+  pspear=pcor(scaledf,method='spearman')$estimate
+  corest<-pspear[5]
+  if(corest<0){
+    dif=dif*-1
+  }
+  
+  return(dif)
+
+}
+
+# Next, to derive the statistical significance of observed age effects, we need to test if the two models (one with an age term, one without) are significantly different. We use an ANOVA for this procedure. These p-values will eventually be FDR-corrected.
+
+# chisq test sig. output
+DeltaPEstVec_EX<-function(x){
+  
+    # relevant df
+  scaledf<-data.frame(cbind(as.numeric(masterdf$externalizing_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('externalizing_4factorv2','Age','Sex','Motion','varofint')
+  
+  # no-EF model (segreg ~ sex + motion)
+  noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
+  # EF-included model for measuring difference
+  TdGam<-gam(varofint~externalizing_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  
+  # test of dif with anova.gam
+  anovaRes<-anova.gam(noTdGam,TdGam,test='Chisq')
+  anovaP<-anovaRes$`Pr(>Chi)`
+  anovaP2<-unlist(anovaP)
+  return(anovaP2[2])
+}
+
+```
+
+
+```{r}
 # load 'erry thang
 
 ### load in demograhics
@@ -90,11 +288,19 @@ motmerge$Motion <- (motmerge$restRelMeanRMSMotion + motmerge$nbackRelMeanRMSMoti
 motiondf<-data.frame(motmerge$bblid,motmerge$Motion)
 colnames(motiondf)<-c('bblid','Motion')
 
+# bring in psychopathology data
+psy<-read.csv('/cbica/projects/pinesParcels/data_psy/n1601_goassess_itemwise_bifactor_scores_20161219.csv')
+psycor<-read.csv('/cbica/projects/pinesParcels/data_psy/n1601_goassess_itemwise_corrtraits_scores_20161219.csv')
+
 ### combine non-fMR data
 colnames(subjects)<-c("bblid")
 colnames(ageSex)<-c("Age","Sex","scanid","bblid")
 df<-merge(subjects,ageSex,by="bblid")
 df<-merge(df,motiondf,by='bblid')
+
+df<-merge(df,psy,by='bblid')
+df<-merge(df,psycor,by='bblid')
+
 
 ### community solutions guaged in this iteration
 community_vec<-seq(2,30)
@@ -226,7 +432,7 @@ for (i in 1:2){
   # extract which of 1:464 network mappings match the modalitity of this loop
   modalindices=which(tmclass %in% modalloopvar[i])
   # loop over each scale
-    for (K in 2:25){
+    for (K in 2:30){
     # Make index of where values from this K should go
       K_start=((K-1)*(K))/2
       K_end=(((K-1)*(K))/2)+K-1
@@ -338,73 +544,50 @@ for (i in 1:2){
 
 ```{r}
 # calculate age effects for each network. This is the part where we loop over all networks ot get all our measures of interest, delta R^2 and associated stat. significance, the slope of estimated age effects across the age-range of our sample, etc.
-# set covariates formula for iterating over in the loop
-covariates=" ~s(Age,k=3)+Sex+Motion"
+
 # initialize output vectors
-minAgeEst<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
-maxAgeEst<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
-SplineP<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
-Avg_BW_Vector<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
-InterceptVector10<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
-InterceptVector21<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
-derivInfo<-array(0,dim=c(464,200))
-NetSplines<-array(0,dim=c(464,693)) 
-avg_bw_deltaR2<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
-avg_bw_deltaP<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
-# for gam-predict 
-gamPredictMeAt10<-data.frame(1,1)
-gamPredictMeAt21<-data.frame(1,1)
-# * 12 for months
-gamPredictMeAt10$Age<-(120)
-gamPredictMeAt10$Motion<-mean(masterdf$Motion)
-# most PTs are females, female as default gender
-gamPredictMeAt10$Sex<-2
-gamPredictMeAt21$Age<-(252)
-gamPredictMeAt21$Motion<-mean(masterdf$Motion)
-gamPredictMeAt21$Sex<-2
+avg_bw_deltaR2_OV<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaP_OV<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaR2_FE<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaP_FE<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaR2_AM<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaP_AM<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaR2_PS<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaP_PS<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaR2_EX<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaP_EX<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+
 # borrowing colnames from indiv_nsegcols to keep network/scale ordering/mappings
-colnames(bwAvgCon)<-gsub("_seg_","_avgBw_",colnames(masterdf[,indiv_wincols_ind]))
+colnames(bwAvgCon)<-gsub("_win_","_avgBw_",colnames(masterdf[,indiv_wincols_ind]))
 bwAvgCondf<-data.frame(bwAvgCon)
 #add on covariate columns
-bwAvgCondf$Age<-masterdf$Age
 bwAvgCondf$Sex<-masterdf$Sex
 bwAvgCondf$Motion<-masterdf$Motion
 #for i in 464, -3 because age sex motion columns sit at the end
-for (i in 1:(length(bwAvgCondf)-3)){
+for (i in 1:(length(bwAvgCondf)-2)){
   # borrowing colnames from indiv_nsegcols to keep network mappings
   x<-colnames(bwAvgCondf[i])
-  avg_bw_deltaR2[i]<-DeltaR2EstVec(bwAvgCondf[i])
-  avg_bw_deltaP[i]<-DeltaPEstVec(bwAvgCondf[i])
-  form<-as.formula(paste("",x,"", covariates, sep=""))
-  igam<-gam(formula = form,data=bwAvgCondf)
-  SplineP[i]<-summary(igam)$s.pv
-  # get average b/w con
-  Avg_BW_Vector[i]<-mean(bwAvgCondf[,i])
-  # get intercept at 10 and 21 years old
-  InterceptVector10[i]<-predict.gam(igam,gamPredictMeAt10)
-  InterceptVector21[i]<-predict.gam(igam,gamPredictMeAt21)
-  derv<-derivatives(igam,term='Age')
-  derv<- derv %>%
-  mutate(sig = !(0 >lower & 0 < upper))
-  derv$sig_deriv = derv$derivative*derv$sig
-  if (all(derv$sig==FALSE)){minAgeEst[i]=0; maxAgeEst[i]=0
-  } else {
-  minAgeEst[i]<-min(derv$data[derv$sig==T])
-  maxAgeEst[i]<-max(derv$data[derv$sig==T])
-  # changed to sig deriv only 7/10/20
-  derivInfo[i,]=derv$sig_deriv
-  forSpline<-predict(igam, data = masterdf, type = "terms")
-  # version without centering
-  NetSplines[i,]<-forSpline[,3]+coef(igam)[1]
-  }
+  avg_bw_deltaR2_OV[i]<-DeltaR2EstVec_OV(bwAvgCondf[i])
+  avg_bw_deltaP_OV[i]<-DeltaPEstVec_OV(bwAvgCondf[i])
+  avg_bw_deltaR2_FE[i]<-DeltaR2EstVec_FE(bwAvgCondf[i])
+  avg_bw_deltaP_FE[i]<-DeltaPEstVec_FE(bwAvgCondf[i])
+  avg_bw_deltaR2_AM[i]<-DeltaR2EstVec_AM(bwAvgCondf[i])
+  avg_bw_deltaP_AM[i]<-DeltaPEstVec_AM(bwAvgCondf[i])
+  avg_bw_deltaR2_PS[i]<-DeltaR2EstVec_PS(bwAvgCondf[i])
+  avg_bw_deltaP_PS[i]<-DeltaPEstVec_PS(bwAvgCondf[i])
+  avg_bw_deltaR2_EX[i]<-DeltaR2EstVec_EX(bwAvgCondf[i])
+  avg_bw_deltaP_EX[i]<-DeltaPEstVec_EX(bwAvgCondf[i])
 }
-# fdr-correct spline P values for each network's estimated age effect
-SplineP_fdr<-p.adjust(SplineP,method='fdr')
+
+```
+
+```{r}
 # network-level sig vector - this will be used for color contrast in plots (desaturating non-sig)
 NL_sigVec<-logical(464)
-NL_sigVec[SplineP_fdr<0.05]<-TRUE
+FDR_netP<-p.adjust(avg_bw_deltaP,method='fdr')
+NL_sigVec[avg_bw_deltaP<0.05]<-TRUE
 # bring all of the filled-out veectors together into a dataframe for plotting
-bwdf<-data.frame(tmvec,scalesvec,domnetvec,domnetvec17,netpropvec,avg_bw_deltaR2,avg_bw_deltaP)
+bwdf<-data.frame(tmvec,scalesvec,domnetvec,domnetvec17,netpropvec,avg_bw_deltaR2_OV,avg_bw_deltaP_OV,avg_bw_deltaR2_FE,avg_bw_deltaP_FE,avg_bw_deltaR2_AM,avg_bw_deltaP_AM,avg_bw_deltaR2_PS,avg_bw_deltaP_PS,avg_bw_deltaR2_EX,avg_bw_deltaP_EX)
 ```
 
 ```{r}
@@ -416,6 +599,178 @@ bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
 bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
 bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
 
-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Transmodality") + ylab(expression(paste('Age Effect (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.24),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)
+### vector for OV sig.
+bwdf$domnetvecSig<-'NonSig'
+corrected<-p.adjust(avg_bw_deltaP_OV,method='fdr')
+# network-level sig vector
+NL_sigVec<-logical(464)
+NL_sigVec[corrected<0.05]<-TRUE
+bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
+# order for plot legend
+bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
+bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
 
+
+
+OV<-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_OV)) + 
+geom_point(size=4,alpha=.8,aes(color=domnetvecSig)) + scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80'))+ 
+xlab("Transmodality") + ylab(expression(paste('Overall (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.16),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)
+
+### vector for FE sig
+bwdf$domnetvecSig<-'NonSig'
+corrected<-p.adjust(avg_bw_deltaP_FE,method='fdr')
+# network-level sig vector
+NL_sigVec<-logical(464)
+NL_sigVec[corrected<0.05]<-TRUE
+bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
+# order for plot legend
+bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
+bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
+
+
+FE<-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_FE)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Transmodality") + ylab(expression(paste('Fear (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.16),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)
+
+### vector for AM sig
+bwdf$domnetvecSig<-'NonSig'
+corrected<-p.adjust(avg_bw_deltaP_AM,method='fdr')
+# network-level sig vector
+NL_sigVec<-logical(464)
+NL_sigVec[corrected<0.05]<-TRUE
+bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
+# order for plot legend
+bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
+bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
+
+AM<-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_AM)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Transmodality") + ylab(expression(paste('Anx.-Mis. (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.16),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)
+
+### vector for PS sig
+bwdf$domnetvecSig<-'NonSig'
+corrected<-p.adjust(avg_bw_deltaP_PS,method='fdr')
+# network-level sig vector
+NL_sigVec<-logical(464)
+NL_sigVec[corrected<0.05]<-TRUE
+bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
+# order for plot legend
+bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
+bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
+
+PS<-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_PS)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Transmodality") + ylab(expression(paste('Psychosis (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.16),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))
+
+
+### vector for EX sig
+bwdf$domnetvecSig<-'NonSig'
+corrected<-p.adjust(avg_bw_deltaP_EX,method='fdr')
+# network-level sig vector
+NL_sigVec<-logical(464)
+NL_sigVec[corrected<0.05]<-TRUE
+bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
+# order for plot legend
+bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
+bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
+
+EX<-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_EX)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Transmodality") + ylab(expression(paste('External (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.16),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))
+
+```
+
+```{r}
+# extract edge df
+indiv_bwcols_ind<-intersect(bwcol,indiv)
+individ_scalebybw_df<-masterdf[,indiv_bwcols_ind]
+```
+
+```{r}
+#### This measures all the pairwise relations (edges)
+ageDR2vec_OV<-rep(0,length(colnames(individ_scalebybw_df)))
+ageDR2vec_FE=rep(0,length(colnames(individ_scalebybw_df)))
+ageDR2vec_AM<-rep(0,length(colnames(individ_scalebybw_df)))
+ageDR2vec_PS<-rep(0,length(colnames(individ_scalebybw_df)))
+ageDR2vec_EX=rep(0,length(colnames(individ_scalebybw_df)))
+
+# for recording net1 and net2 tm
+net1tmvec=rep(0,length(colnames(individ_scalebybw_df)))
+net2tmvec=rep(0,length(colnames(individ_scalebybw_df)))
+tmdifvec=rep(0,length(colnames(individ_scalebybw_df)))
+# this is to look at how finer scales confer networks that are less different
+scalevec=rep(0,length(colnames(individ_scalebybw_df)))
+# record net types
+Net1Vec=rep(0,length(colnames(individ_scalebybw_df)))
+Net2Vec=rep(0,length(colnames(individ_scalebybw_df)))
+Net1Vec17=rep(0,length(colnames(individ_scalebybw_df)))
+Net2Vec17=rep(0,length(colnames(individ_scalebybw_df)))
+
+## for all b/w cols - 7/9/21
+for (i in 1:length(colnames(individ_scalebybw_df))){
+    # extract column name. Will parse column name to determine nature of #connection
+    curcolname<-colnames(individ_scalebybw_df)[i]
+    splitname<-unlist(strsplit(curcolname,'_'))
+    scalefield=splitname[4]
+    net1field=splitname[5]
+    net2field=splitname[7]
+    # doctor up scale and net1field so they are exclusively the value of #interest
+    scale=as.numeric(unlist(strsplit(scalefield,'e'))[2])
+    net1=unlist(strsplit(net1field,'s'))[2]
+    net2=net2field 
+    # helping phriendly index
+    K_start=((scale-1)*(scale))/2
+    K_end=(((scale-1)*(scale))/2)+scale-1
+    Kind<-K_start:K_end
+    # get TM values of both nets at this scale
+    tm1=tmvec[Kind[as.numeric(net1)]]
+    tm2=tmvec[Kind[as.numeric(net2)]]
+    net1tmvec[i]<-tm1
+    net2tmvec[i]<-tm2
+    # absolute value as directionality is meaningless here
+    tmdif=abs(tm1-tm2)
+    # get position in master df of this column (need to use \b for exact matches #only)
+    # added first b 11-9, works if remove
+    curcolnameexact<-paste('\\b',curcolname,'\\b',sep='')
+    colindex<-grep(curcolnameexact,colnames(masterdf))
+    
+    # save to respective vectors
+    tmdifvec[i]<-tmdif
+    # accompanying scalevec so we can look at the typical transmodality #difference at each scale
+    scalevec[i]=scale
+    
+    # record Networks assayed in terms of yeo7
+    y7lab1=domnetvec[Kind[as.numeric(net1)]]
+    y7lab2=domnetvec[Kind[as.numeric(net2)]]
+    y17lab1=domnetvec17[Kind[as.numeric(net1)]]
+    y17lab2=domnetvec17[Kind[as.numeric(net2)]]
+    Net1Vec[i]<-as.character(y7lab1)
+    Net2Vec[i]<-as.character(y7lab2)
+    Net1Vec17[i]<-as.character(y17lab1)
+    Net2Vec17[i]<-as.character(y17lab2)
+    
+    # delta r2 for age
+    ageDR2vec_OV[i]<-DeltaR2EstVec_OV(masterdf[,colindex])
+    ageDR2vec_FE[i]<-DeltaR2EstVec_FE(masterdf[,colindex])
+    ageDR2vec_AM[i]<-DeltaR2EstVec_AM(masterdf[,colindex])
+    ageDR2vec_PS[i]<-DeltaR2EstVec_PS(masterdf[,colindex])
+    ageDR2vec_EX[i]<-DeltaR2EstVec_EX(masterdf[,colindex])
+    #####################################
+}
+
+
+
+# get vectors into a dataframe
+BwAgeCorTMDifDf<-data.frame(tmdifvec,scalevec,Net1Vec,Net2Vec,Net1Vec17,Net2Vec17,ageDR2vec_OV,ageDR2vec_EX,net1tmvec,net2tmvec)
+
+# ycolors
+ycolors=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c')
+Y7vec<-c('Motor','Visual','DA','VA','Limbic','FP','DM')
+```
+
+```{r}
+# overall
+ggplot(BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_OV))+ geom_text(data=BwAgeCorTMDifDf,size=10,label="\u25D6",family="Arial Unicode MS",aes(x=tmdifvec,y=ageDR2vec_OV,color=Net1Vec))+scale_color_manual(values=ycolors,limits=Y7vec)+geom_text(data=BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_OV,color=Net2Vec),size=10,label="\u25D7",family="Arial Unicode MS")+theme(legend.position = "none") + xlab('Transmodality Difference') + ylab(expression(paste('Overall Effect (',Delta,R^2[adj],')')))+theme_classic(base_size = 40)+theme(legend.position = "none")+geom_smooth(method='lm',color='black',size=2)
+```
+
+```{r}
+# External
+ggplot(BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_EX))+ geom_text(data=BwAgeCorTMDifDf,size=10,label="\u25D6",family="Arial Unicode MS",aes(x=tmdifvec,y=ageDR2vec_EX,color=Net1Vec))+scale_color_manual(values=ycolors,limits=Y7vec)+geom_text(data=BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_EX,color=Net2Vec),size=10,label="\u25D7",family="Arial Unicode MS")+theme(legend.position = "none") + xlab('Transmodality Difference') + ylab(expression(paste('External Effect (',Delta,R^2[adj],')')))+theme_classic(base_size = 40)+theme(legend.position = "none")+geom_smooth(method='lm',color='black',size=2)
+```
+
+```{r}
+# Psychosis
+ggplot(BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_PS))+ geom_text(data=BwAgeCorTMDifDf,size=10,label="\u25D6",family="Arial Unicode MS",aes(x=tmdifvec,y=ageDR2vec_PS,color=Net1Vec))+scale_color_manual(values=ycolors,limits=Y7vec)+geom_text(data=BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_PS,color=Net2Vec),size=10,label="\u25D7",family="Arial Unicode MS")+theme(legend.position = "none") + xlab('Transmodality Difference') + ylab(expression(paste('Psychosis Effect (',Delta,R^2[adj],')')))+theme_classic(base_size = 40)+theme(legend.position = "none")+geom_smooth(method='lm',color='black',size=2)
 ```

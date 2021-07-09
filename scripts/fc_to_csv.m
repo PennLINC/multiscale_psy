@@ -1,7 +1,7 @@
 outdir='/cbica/projects/pinesParcels/results_psy/aggregated_data/fc/'
 
 % to become 2 to 30 when stuff finishes running someday
-Krange=2:25
+Krange=2:30
 
 subjs=load('/cbica/projects/pinesParcels/data_psy/PsychSubjs.txt');
 

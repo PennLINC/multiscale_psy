@@ -1,7 +1,7 @@
 %%% Merge all subject/scale-level FC matrices into one struct for further proc
 
 % to become 2 to 30 when stuff finishes running someday
-Krange=2:25;
+Krange=2:30;
 
 subjs=load('/cbica/projects/pinesParcels/data/bblids.txt');
 psySubjs=load('/cbica/projects/pinesParcels/data_psy/NewPsySubjs.txt');
