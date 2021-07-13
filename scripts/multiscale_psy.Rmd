@@ -582,23 +582,11 @@ for (i in 1:(length(bwAvgCondf)-2)){
 ```
 
 ```{r}
-# network-level sig vector - this will be used for color contrast in plots (desaturating non-sig)
-NL_sigVec<-logical(464)
-FDR_netP<-p.adjust(avg_bw_deltaP,method='fdr')
-NL_sigVec[avg_bw_deltaP<0.05]<-TRUE
 # bring all of the filled-out veectors together into a dataframe for plotting
 bwdf<-data.frame(tmvec,scalesvec,domnetvec,domnetvec17,netpropvec,avg_bw_deltaR2_OV,avg_bw_deltaP_OV,avg_bw_deltaR2_FE,avg_bw_deltaP_FE,avg_bw_deltaR2_AM,avg_bw_deltaP_AM,avg_bw_deltaR2_PS,avg_bw_deltaP_PS,avg_bw_deltaR2_EX,avg_bw_deltaP_EX)
 ```
 
 ```{r}
-# Map nonsig to grey
-bwdf$domnetvecSig<-'NonSig'
-# sig where CL_vec indicates
-bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
-# order for plot legend
-bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
-bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
-
 ### vector for OV sig.
 bwdf$domnetvecSig<-'NonSig'
 corrected<-p.adjust(avg_bw_deltaP_OV,method='fdr')
@@ -609,8 +597,6 @@ bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
 # order for plot legend
 bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
 bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
-
-
 
 OV<-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_OV)) + 
 geom_point(size=4,alpha=.8,aes(color=domnetvecSig)) + scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80'))+ 
@@ -676,6 +662,20 @@ EX<-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_EX)) + geom_point(size=6,alpha=.8,aes(c
 # extract edge df
 indiv_bwcols_ind<-intersect(bwcol,indiv)
 individ_scalebybw_df<-masterdf[,indiv_bwcols_ind]
+```
+
+```{r}
+# combine age, motion, and Psychopath scores with edges
+AgeMotOV<-cbind(masterdf[,indiv_bwcols_ind],masterdf$Age,masterdf$Motion,masterdf$externalizing_corrtraitsv2)
+# write out for scikit learn
+write.table(AgeMotOV,'/cbica/projects/pinesParcels/results_psy/EffectVecs/AgeMotOV',sep=',', col.names = F,quote = F,row.names=F)
+```
+
+```{r}
+# combine age, motion, and Psychopath scores with network-level measures
+AgeMotOV_NetLevel<-cbind(bwAvgCon,masterdf$Age,masterdf$Motion,masterdf$overall_psychopathology_4factorv2)
+# write out for scikit learn
+write.table(AgeMotOV_NetLevel,'/cbica/projects/pinesParcels/results_psy/EffectVecs/AgeMotOV_NetLevel',sep=',', col.names = F,quote = F,row.names=F)
 ```
 
 ```{r}
