@@ -19,11 +19,11 @@ from pygam import LinearGAM, s, l
 summary_preds=np.empty([4,2])
 # need a different, subject-level prediction DF so we can unpack predicted EF in R
 # first column is additive predicted EF, second column is number of times it was added, third is estimated EF controlling for age and motion
-subject_preds_AI=np.zeros([693,3])
+subject_preds_AI=np.zeros([790,3])
 # equiv. for permutation predictions
-permut_subject_preds_AI=np.zeros([693,3])
+permut_subject_preds_AI=np.zeros([790,3])
 # Subject b.w. features	
-filename='/cbica/projects/pinesParcels/results/EffectVecs/AgeMotEF'
+filename='/cbica/projects/pinesParcels/results_psy/EffectVecs/AgeMotOV_NetLevel'
 data_AI=np.loadtxt(filename,delimiter=',')
 # Divide to predict variable of interest from feature columns
 Featvecs_AI=data_AI[:,:-3]
@@ -36,9 +36,9 @@ age=data_AI[:,-3]
 # set alphas testable for gcv
 alphas = np.exp2(np.arange(16)-10)
 # set subject indices for recoring train test splits
-indices = range(693)
+indices = range(790)
 # permutation initialization: 1000 iterations of across-subject permutations
-permutedEF=np.zeros([693,1000])
+permutedEF=np.zeros([790,1000])
 # 1000 permutations
 permutIndices=[np.random.permutation(indices) for i in range(1000)]
 for i in range(1000):
@@ -148,21 +148,21 @@ mean_alphas_permut=np.average(all_permut_preds_alphas[:])
 mean_featureWeights_AI=np.average(featureWeights_AI,axis=0)
 # mean EF predictions
 # throw em in (p-1 because there's no part_0.mat)
-summary_preds[0,0]=mean_preds_AI
-summary_preds[0,1]=mean_alphas_AI
+#summary_preds[0,0]=mean_preds_AI
+#summary_preds[0,1]=mean_alphas_AI
 print("Unpermuted out-of-sample predicted vs. observed correlation:" + str(mean_preds_AI))
 print("Average Optimal Regularization Weighting:" + str(mean_alphas_AI))
-allPredsFN='/cbica/projects/pinesParcels/data/aggregated_data/Predicted_Obs_Cors.csv'
-np.savetxt(allPredsFN,all_preds,delimiter=",")
+#allPredsFN='/cbica/projects/pinesParcels/data/aggregated_data/Predicted_Obs_Cors.csv'
+#np.savetxt(allPredsFN,all_preds,delimiter=",")
 # mean MSE
 meanMSE=np.average(mse_AI[:,0])
 print("Mean Mean Squared Error (unpermuted):" + str(meanMSE))
-featureweightsFN='/cbica/projects/pinesParcels/data/aggregated_data/FeatureWeights_AI.csv'
-np.savetxt(featureweightsFN,mean_featureWeights_AI,delimiter=",")
+#featureweightsFN='/cbica/projects/pinesParcels/data/aggregated_data/FeatureWeights_AI.csv'
+#np.savetxt(featureweightsFN,mean_featureWeights_AI,delimiter=",")
 # save predicted subject info
-subjpredsFN='/cbica/projects/pinesParcels/data/aggregated_data/SubjPreds_AI.csv'
-np.savetxt(subjpredsFN,subject_preds_AI,delimiter=",")
+#subjpredsFN='/cbica/projects/pinesParcels/data/aggregated_data/SubjPreds_AI.csv'
+#np.savetxt(subjpredsFN,subject_preds_AI,delimiter=",")
 # save permuted predictions vector
-permpredsFN='/cbica/projects/pinesParcels/data/aggregated_data/PermutPreds_AI.csv'
-np.savetxt(permpredsFN,all_permut_preds,delimiter=",")
+#permpredsFN='/cbica/projects/pinesParcels/data/aggregated_data/PermutPreds_AI.csv'
+#np.savetxt(permpredsFN,all_permut_preds,delimiter=",")
 

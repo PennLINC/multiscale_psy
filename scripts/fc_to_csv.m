@@ -5,6 +5,13 @@ Krange=2:30
 
 subjs=load('/cbica/projects/pinesParcels/data_psy/PsychSubjs.txt');
 
+% load old and new subjects in order that merge_fc script does
+subjs=load('/cbica/projects/pinesParcels/data/bblids.txt');
+psySubjs=load('/cbica/projects/pinesParcels/data_psy/NewPsySubjs.txt');
+
+% combine subj list
+subjs=vertcat(subjs,psySubjs);
+
 % load in the cell struct array frakenmatrices
 ind_file=load('/cbica/projects/pinesParcels/results_psy/aggregated_data/ind_conmats_allscales_allsubjs.mat');
 ind_feats=ind_file.ind_mats;

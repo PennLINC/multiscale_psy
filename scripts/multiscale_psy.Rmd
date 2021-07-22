@@ -174,14 +174,14 @@ DeltaPEstVec_AM<-function(x){
 DeltaR2EstVec_PS<-function(x){
   
   # relevant df
-  scaledf<-data.frame(cbind(as.numeric(masterdf$psychosis_corrtraitsv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
-  colnames(scaledf)<-c('psychosis_corrtraitsv2','Age','Sex','Motion','varofint')
+  scaledf<-data.frame(cbind(as.numeric(masterdf$psychosis_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('psychosis_4factorv2','Age','Sex','Motion','varofint')
   
   # no-Td model (b.w. ~ sex + motion)
   noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
   noTdSum<-summary(noTdGam)
   # Td-included model for measuring difference
-  TdGam<-gam(varofint~psychosis_corrtraitsv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  TdGam<-gam(varofint~psychosis_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
   TdSum<-summary(TdGam)
   
   dif<-TdSum$r.sq-noTdSum$r.sq
@@ -221,14 +221,14 @@ DeltaPEstVec_PS<-function(x){
 DeltaR2EstVec_EX<-function(x){
   
   # relevant df
-  scaledf<-data.frame(cbind(as.numeric(masterdf$externalizing_corrtraitsv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
-  colnames(scaledf)<-c('externalizing_corrtraitsv2','Age','Sex','Motion','varofint')
+  scaledf<-data.frame(cbind(as.numeric(masterdf$externalizing_4factorv2),as.numeric(masterdf$Age),as.numeric(masterdf$Sex),masterdf$Motion,x))
+  colnames(scaledf)<-c('externalizing_4factorv2','Age','Sex','Motion','varofint')
   
   # no-Td model (b.w. ~ sex + motion)
   noTdGam<-gam(varofint~Sex+Motion+s(Age,k=3),data=scaledf)
   noTdSum<-summary(noTdGam)
   # Td-included model for measuring difference
-  TdGam<-gam(varofint~externalizing_corrtraitsv2+Sex+Motion+s(Age,k=3),data=scaledf)
+  TdGam<-gam(varofint~externalizing_4factorv2+Sex+Motion+s(Age,k=3),data=scaledf)
   TdSum<-summary(TdGam)
   
   dif<-TdSum$r.sq-noTdSum$r.sq
@@ -311,7 +311,10 @@ fc<-vroom('/cbica/projects/pinesParcels/results_psy/aggregated_data/fc/master_fc
 
 # Merge with non-fMR data into master data frame
 masterdf<-merge(fc,df,by='bblid')
+```
 
+
+```{r}
 ### Get in Consensus-reference atlas correspondence
 rac<-read.csv('/cbica/projects/pinesParcels/results/aggregated_data/fc/network_yCorrespondence_overscales.csv',stringsAsFactors = F)
 scalesvec<-as.numeric(rac[2,])
@@ -376,175 +379,67 @@ bwAvgCon<-matrix(0,790,464)
 # simpler but about 5x slower....
 
 ## loop over each scale
-#  for (K in 2:30){
-#  # Make index of where values from this K should go
-#    K_start=((K-1)*(K))/2
-#    K_end=(((K-1)*(K))/2)+K-1
-#    Kind<-K_start:K_end
-#    # index which values are at this scale
-#    scaleStr=paste('scale',K,'_',sep='')
-#    scaleCols_inds=grep(scaleStr,colnames(masterdf))
-#    scaleK_bw_indivi_cols_inds<-intersect(indiv_bwcols_ind,scaleCols_inds)
-#    # extract within and between colnames at this scale for within->b/w binarized transmodality mapping
-#    bwcolnames_thisScale_inds<-grep((paste('scale',K,'_',sep='')),bwcolnames)
-#    bwcolnames_thisScale=bwcolnames[bwcolnames_thisScale_inds]
-#    
-#    # remove scale number from strings so we're not picking up on those
-#    bwcolnames_thisScale_split<-strsplit(bwcolnames_thisScale,"nets")
-#    bwnetnames_thisScale<-sapply(bwcolnames_thisScale_split, "[[" , 2)
-#    # add another fucking set of underscores to all of these colnames so 1's dont pick up 10s, 2s 20s.
-#    bwnetnames_thisScale_extended<-paste('ind_bw_FC_scale',K,'_nets_',bwnetnames_thisScale,'_',sep='')
-#    # extra goddamn underscores have to go here and be removed later
-#    bwcolnames_thisScale_split<-strsplit(bwcolnames_thisScale,"nets")
-#    
-#    for (N in 1:K){
-#      # generate index for where values for this network at this scale should reside
-#      # start from K index
-#      Nind<-Kind[N]
-#      # get index for this N in terms of masterdf (collapse | to match multiple patterns)
-#      Ncolnames<-grep(as.character(paste('_',N,'_',sep='')),bwnetnames_thisScale_extended,value=T)
-#      # cut terminal underscore
-#      Ncolnames_circumcised<-substr(Ncolnames,1,nchar(Ncolnames)-1)
-#      # cut last extraneous underscore: after scaleX_nets_
-#      scaleNetStr=paste(scaleStr,'nets_',sep='')
-#      desired_scaleNetStr=paste(scaleStr,'nets',sep='')
-#      # make the subs
-#      Ncolnames_circumcised_shortened<-gsub(scaleNetStr,desired_scaleNetStr,Ncolnames_circumcised)
-#      # find corresponding spots in masterdf
-#      # paste("x$") added for exact matches only (end anchor)
-#      N_indices<-sapply(Ncolnames_circumcised_shortened,function(y) grep(paste(y,'$',sep=''),colnames(masterdf)))
-#      # extract all columns of interest for each subject
-#      N_edges_at_this_scale<-cbind(masterdf[,N_indices])
-#      # get corresponding columns, average over
-#      avg_bw=rowMeans(N_edges_at_this_scale)
-#      # for bw-based gams later - convert all b/w cons for a net to avg b/w for each subj
-#      bwAvgCon[,Nind]=avg_bw
-#    }
-#  }
-
-# More complicated version for faster run-time
-
-# loop over connectivities to-unimodal then to-transmodal
-modalloopvar=c('unimodal','transmodal')
-for (i in 1:2){
-  print(modalloopvar[i])
-  # index "the other"
-  modalloopvar_other=modalloopvar[modalloopvar!=(modalloopvar[i])]
-  # extract which of 1:464 network mappings match the modalitity of this loop
-  modalindices=which(tmclass %in% modalloopvar[i])
-  # loop over each scale
-    for (K in 2:30){
-    # Make index of where values from this K should go
-      K_start=((K-1)*(K))/2
-      K_end=(((K-1)*(K))/2)+K-1
-      Kind<-K_start:K_end
-    
-    # index which values are at this scale
-    scaleStr=paste('scale',K,'_',sep='')
-    scaleCols_inds=grep(scaleStr,colnames(masterdf))
-    scaleK_bw_indivi_cols_inds<-intersect(indiv_bwcols_ind,scaleCols_inds)
-    # extract within and between colnames at this scale for within->b/w binarized transmodality mapping
-    wincolnames_thisScale_inds<-grep((paste('scale',K,'_',sep='')),wincolnames)
-    wincolnames_thisScale=wincolnames[wincolnames_thisScale_inds]
+ for (K in 2:30){
+ # Make index of where values from this K should go
+   K_start=((K-1)*(K))/2
+   K_end=(((K-1)*(K))/2)+K-1
+   Kind<-K_start:K_end
+   # index which values are at this scale
+   scaleStr=paste('scale',K,'_',sep='')
+   scaleCols_inds=grep(scaleStr,colnames(masterdf))
+   scaleK_bw_indivi_cols_inds<-intersect(indiv_bwcols_ind,scaleCols_inds)
+   # extract within and between colnames at this scale for within->b/w binarized transmodality mapping
     bwcolnames_thisScale_inds<-grep((paste('scale',K,'_',sep='')),bwcolnames)
     bwcolnames_thisScale=bwcolnames[bwcolnames_thisScale_inds]
     
-    # This was to double check that the "scale" grepping was selective enough
-    # print(paste(scaleStr,'number of features:',length(bwcolnames_thisScale)))
-  # one weird trick to get binarized transmodality class vector for same scale (Doctors hate him!)
-    # tm naming aligns with wincon naming
-    tmclasses_thisScale<-tmclass[wincolnames_thisScale_inds]
-    # extract the network number of each network at this scale in same order as tmclasses_thisScale
-    wincolNamesSplit<-strsplit(wincolnames_thisScale,"_net")
-    wincolNames_net<-sapply(wincolNamesSplit, "[[" , 2)
-    # mini matching vectors with network label at this scale in one col and transmodality binarization in the other
-    tmMatchingVecs<-cbind(wincolNames_net,tmclasses_thisScale)
     # remove scale number from strings so we're not picking up on those
     bwcolnames_thisScale_split<-strsplit(bwcolnames_thisScale,"nets")
-    bwnetnames_thisScale<-wincolNames_net<-sapply(bwcolnames_thisScale_split, "[[" , 2)
-    # add another fucking set of underscores to all of these colnames so 1's dont pick up 10s
-    bwnetnames_thisScale_extended<-paste('ind_bw_FC_scale',K,'_nets_',bwnetnames_thisScale,'_',sep='')
-    # extra goddamn undercores have to go here and be removed later
-    bwcolnames_thisScale_split<-strsplit(bwcolnames_thisScale,"nets")
-    # to be matched in all-networks-at-this-scale loop
-    # now as we descend into the third circle of for-loop hell, we find the guy from man vs.food being eaten alive by cerberus
-    for (N in 1:K){
-      # generate index for where values for this network at this scale should reside
-      # start from K index
-      Nind<-Kind[N]
-      # get index for this N in terms of masterdf (collapse | to match multiple patterns)
-      Ncolname<-grep(as.character(paste('_',N,'_',sep='')),bwnetnames_thisScale_extended,value=T)
-      # need to add "_" before and after each number so I can select for '_N_' and not pick up teens digits with 1, 20s with 3, 15 and 25 with 5, etc.
-      # determine if this network is transmodal or unimodal
-      NModality<-tmMatchingVecs[,2][[N]]
-      NotNModality<-modalloopvar[modalloopvar!=NModality]
-      matchvec<-grep(NModality,tmclasses_thisScale)
-      # remove self
-      matchvec<-matchvec[matchvec!=N]
-      # build index of matching modalities to reference masterdf (collapse | to match multiple patterns)
-      matchTruncColName<-grep(as.character(paste('_',matchvec,'_',sep='',collapse="|")),Ncolname,value=T)
-      # remove first and last characters now that we are specific
-      #matchTruncColName<-sub('.$','',matchTruncColName)
-      #matchTruncColName<-sub('.','',matchTruncColName)
-      # deal with weird thing where empty space was being grepped because of its aspecificity at coarse scales
-      if(length(matchTruncColName)==0){
-        matchTruncColName[1]='CANTSEEME'
-      }
-      match_NetN_scaleK_bw_indivi_cols_ind_within_other_ind<-grep(as.character(paste(matchTruncColName,collapse="|")),bwnetnames_thisScale_extended)
-      match_NetN_scaleK_bw_indivi_cols_names<-bwcolnames_thisScale[match_NetN_scaleK_bw_indivi_cols_ind_within_other_ind]
-      # deep-sea grepping the whole paste and pipe thing is just to deal with character vectors instead of single patterns
-      
-      # deal with weird thing where empty space was being grepped because of its aspecificity
-      if(length(match_NetN_scaleK_bw_indivi_cols_names)==0){
-        match_NetN_scaleK_bw_indivi_cols_names[1]='CANTSEEME'
-      }
+    bwnetnames_thisScale<-sapply(bwcolnames_thisScale_split, "[[" , 2)
+    # add another fucking set of underscores to all of these colnames so 1's dont pick up 10s, 2s 20s.
+   bwnetnames_thisScale_extended<-paste('ind_bw_FC_scale',K,'_nets_',bwnetnames_thisScale,'_',sep='')
+   # extra goddamn underscores have to go here and be removed later
+   bwcolnames_thisScale_split<-strsplit(bwcolnames_thisScale,"nets")
+   
+   for (N in 1:K){
+     # generate index for where values for this network at this scale should reside
+     # start from K index
+     Nind<-Kind[N]
+     # get index for this N in terms of masterdf (collapse | to match multiple patterns)
+     Ncolnames<-grep(as.character(paste('_',N,'_',sep='')),bwnetnames_thisScale_extended,value=T)
+     # cut terminal underscore
+     Ncolnames_circumcised<-substr(Ncolnames,1,nchar(Ncolnames)-1)
+     # cut last extraneous underscore: after scaleX_nets_
+     scaleNetStr=paste(scaleStr,'nets_',sep='')
+     desired_scaleNetStr=paste(scaleStr,'nets',sep='')
+     # make the subs
+     Ncolnames_circumcised_shortened<-gsub(scaleNetStr,desired_scaleNetStr,Ncolnames_circumcised)
+     # find corresponding spots in masterdf
+     # paste("x$") added for exact matches only (end anchor)
+     N_indices<-sapply(Ncolnames_circumcised_shortened,function(y) grep(paste(y,'$',sep=''),colnames(masterdf)))
+     # extract all columns of interest for each subject
+     N_edges_at_this_scale<-cbind(masterdf[,N_indices])
+     # get corresponding columns, average over
+     avg_bw=rowMeans(N_edges_at_this_scale)
+     # for bw-based gams later - convert all b/w cons for a net to avg b/w for each subj
+     bwAvgCon[,Nind]=avg_bw
+   }
+ }
 
-      # added a faux '_' to end of column to col names can more selectively match numbers (not picking up on 20 when looking for 2, 2_ and 20_ more distinct)
-      match_NetN_scaleK_bw_indivi_cols_ind<-grep(as.character(paste(match_NetN_scaleK_bw_indivi_cols_names,'_',sep='',collapse="|")),paste(colnames(masterdf),'_',sep=''))
-    
-  
-      oppositevec<-grep(NotNModality,tmclasses_thisScale)
-      
-      # build index of NON-matching modalities to reference masterdf (collapse | to match multiple patterns)
-      unmatchTruncColName<-grep(as.character(paste('_',oppositevec,'_',sep='',collapse="|")),Ncolname,value=T)
-      # search for string in limited bwcolnames at this scale so as not to invite other scales into this grep party
-      # remove first and last characters now that we are specific
-      #unmatchTruncColName<-sub('.$','',unmatchTruncColName)
-      #unmatchTruncColName<-sub('.','',unmatchTruncColName)
-      unmatch_NetN_scaleK_bw_indivi_cols_names<-grep(as.character(paste(unmatchTruncColName,collapse="|")),bwnetnames_thisScale_extended,value=T)
-      
-      # deep-sea grepping the whole paste and pipe thing is just to deal with character vectors instead of single patterns
-      unmatch_NetN_scaleK_bw_indivi_cols_ind_within_other_ind<-grep(as.character(paste(unmatch_NetN_scaleK_bw_indivi_cols_names,collapse="|")),bwnetnames_thisScale_extended)
-      unmatch_NetN_scaleK_bw_indivi_cols_names<-bwcolnames_thisScale[unmatch_NetN_scaleK_bw_indivi_cols_ind_within_other_ind]
-      unmatch_NetN_scaleK_bw_indivi_cols_ind<-grep(as.character(paste(unmatch_NetN_scaleK_bw_indivi_cols_names,'_',sep='',collapse="|")),paste(colnames(masterdf),'_',sep=''))
-      
-      
-      # doublecheck that they are mutually exclusive (+1 because self-reference gets removed)
-    #  if(length(tmclasses_thisScale)!=length(matchvec)+length(oppositevec)+1){
-   #     print('You done goofed, internet police are on their way')
-     # }
-      if(length(tmclasses_thisScale)!=length(match_NetN_scaleK_bw_indivi_cols_ind)+length(unmatch_NetN_scaleK_bw_indivi_cols_ind)+1){
-        print('Names dont add up chief')
-        paste('match numbas', length(match_NetN_scaleK_bw_indivi_cols_ind), length(match_NetN_scaleK_bw_indivi_cols_names))
-        paste('unmatch numbas', length(unmatch_NetN_scaleK_bw_indivi_cols_ind), length(unmatch_NetN_scaleK_bw_indivi_cols_names))
-        stopifnot(length(tmclasses_thisScale)==length(match_NetN_scaleK_bw_indivi_cols_ind)+length(unmatch_NetN_scaleK_bw_indivi_cols_ind)+1)
-      }
-      
-      # if it does not match the modality of the grandparent loop, we wish go assay its connections to opposite-modality networks
-    # get average bw network connectivty age correlation for this network at this scale
-      both=cbind(masterdf[,match_NetN_scaleK_bw_indivi_cols_ind],masterdf[,unmatch_NetN_scaleK_bw_indivi_cols_ind, drop=F])
-      avg_bw=rowMeans(both)
-      # for bw-based gams later - convert all b/w cons for a net to avg b/w for each subj
-      bwAvgCon[,Nind]=avg_bw
-    }
-  }
-  
-}
 
 ```
 
 ```{r}
-# calculate age effects for each network. This is the part where we loop over all networks ot get all our measures of interest, delta R^2 and associated stat. significance, the slope of estimated age effects across the age-range of our sample, etc.
+# read in second gradient
+#### read in grad2
+occm<-read.csv('/cbica/projects/pinesParcels/results/aggregated_data/fc/network_grad2_overscales.csv',stringsAsFactors = F)
+colnames(occm)<-occm[1,]
+# aaaand remove it
+occm<-occm[-c(1),]
+occvec<-as.numeric(occm)
+```
+
+```{r}
+# calculate age effects for each network. This is the part where we loop over all networks to get all our measures of interest, delta R^2 and associated stat. significance, the slope of estimated age effects across the age-range of our sample, etc.
 
 # initialize output vectors
 avg_bw_deltaR2_OV<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
@@ -557,6 +452,9 @@ avg_bw_deltaR2_PS<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
 avg_bw_deltaP_PS<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
 avg_bw_deltaR2_EX<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
 avg_bw_deltaP_EX<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+
+avg_bw_deltaR2_age<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
+avg_bw_deltaP_age<-rep(0,length=length(masterdf[,indiv_wincols_ind]))
 
 # borrowing colnames from indiv_nsegcols to keep network/scale ordering/mappings
 colnames(bwAvgCon)<-gsub("_win_","_avgBw_",colnames(masterdf[,indiv_wincols_ind]))
@@ -578,16 +476,44 @@ for (i in 1:(length(bwAvgCondf)-2)){
   avg_bw_deltaP_PS[i]<-DeltaPEstVec_PS(bwAvgCondf[i])
   avg_bw_deltaR2_EX[i]<-DeltaR2EstVec_EX(bwAvgCondf[i])
   avg_bw_deltaP_EX[i]<-DeltaPEstVec_EX(bwAvgCondf[i])
+  avg_bw_deltaR2_age[i]<-DeltaR2EstVec(bwAvgCondf[i])
+  avg_bw_deltaP_age[i]<-DeltaPEstVec(bwAvgCondf[i])
 }
 
 ```
 
 ```{r}
 # bring all of the filled-out veectors together into a dataframe for plotting
-bwdf<-data.frame(tmvec,scalesvec,domnetvec,domnetvec17,netpropvec,avg_bw_deltaR2_OV,avg_bw_deltaP_OV,avg_bw_deltaR2_FE,avg_bw_deltaP_FE,avg_bw_deltaR2_AM,avg_bw_deltaP_AM,avg_bw_deltaR2_PS,avg_bw_deltaP_PS,avg_bw_deltaR2_EX,avg_bw_deltaP_EX)
+bwdf<-data.frame(tmvec,scalesvec,domnetvec,domnetvec17,netpropvec,avg_bw_deltaR2_OV,avg_bw_deltaP_OV,avg_bw_deltaR2_FE,avg_bw_deltaP_FE,avg_bw_deltaR2_AM,avg_bw_deltaP_AM,avg_bw_deltaR2_PS,avg_bw_deltaP_PS,avg_bw_deltaR2_EX,avg_bw_deltaP_EX,avg_bw_deltaR2_age,avg_bw_deltaP_age,occvec)
 ```
 
 ```{r}
+# transient chunk
+SplineP_fdr<-p.adjust(avg_bw_deltaP_age,method='fdr')
+NL_sigVec<-logical(464)
+NL_sigVec[SplineP_fdr<0.05]<-TRUE
+
+# Map nonsig to grey
+bwdf$domnetvecSig<-'NonSig'
+# sig where CL_vec indicates
+bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
+# order for plot legend
+bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
+bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
+
+# stats for fig-lm
+Age_net_lm<-lm(avg_bw_deltaR2_age~tmvec,data=bwdf)
+cor.test(bwdf$tmvec,bwdf$avg_bw_deltaR2_age,method='spearman')
+```
+
+```{r, fig.width=11,fig.height=11}
+# Figure 3C
+ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_age)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Functional Hierarchy") + ylab(expression(paste('Age Effect (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.24),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)
+```
+
+```{r}
+library(mgcv)
+library(lme4)
 # for interaction modeling, melt data
 bwAvgCondf$Age<-masterdf$Age
 bwAvgCondf$bblid<-as.factor(masterdf$bblid)
@@ -644,6 +570,8 @@ bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA",
 
 AM<-ggplot(bwdf,aes(tmvec,avg_bw_deltaR2_AM)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Transmodality") + ylab(expression(paste('Anx.-Mis. (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.16),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)
 
+AM_OCC<-ggplot(bwdf,aes(occvec,avg_bw_deltaR2_AM)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("PG2") + ylab(expression(paste('Anx.-Mis. (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.16),legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)
+
 ### vector for PS sig
 bwdf$domnetvecSig<-'NonSig'
 corrected<-p.adjust(avg_bw_deltaP_PS,method='fdr')
@@ -681,7 +609,7 @@ individ_scalebybw_df<-masterdf[,indiv_bwcols_ind]
 
 ```{r}
 # combine age, motion, and Psychopath scores with edges
-AgeMotOV<-cbind(masterdf[,indiv_bwcols_ind],masterdf$Age,masterdf$Motion,masterdf$psychosis_corrtraitsv2)
+AgeMotOV<-cbind(masterdf[,indiv_bwcols_ind],masterdf$Age,masterdf$Motion,masterdf$mood_4factorv2)
 # write out for scikit learn
 write.table(AgeMotOV,'/cbica/projects/pinesParcels/results_psy/EffectVecs/AgeMotOV',sep=',', col.names = F,quote = F,row.names=F)
 ```
@@ -768,7 +696,7 @@ for (i in 1:length(colnames(individ_scalebybw_df))){
 
 
 # get vectors into a dataframe
-BwAgeCorTMDifDf<-data.frame(tmdifvec,scalevec,Net1Vec,Net2Vec,Net1Vec17,Net2Vec17,ageDR2vec_OV,ageDR2vec_EX,ageDR2vec_PS,net1tmvec,net2tmvec)
+BwAgeCorTMDifDf<-data.frame(tmdifvec,scalevec,Net1Vec,Net2Vec,Net1Vec17,Net2Vec17,ageDR2vec_OV,ageDR2vec_EX,ageDR2vec_PS,net1tmvec,net2tmvec,ageDR2vec_AM)
 
 # ycolors
 ycolors=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c')
@@ -802,7 +730,7 @@ gg_tensor(g2)+theme_classic(base_size = 40) +theme(legend.text=element_text(size
 ggplot(BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_EX))+ geom_text(data=BwAgeCorTMDifDf,size=10,label="\u25D6",family="Arial Unicode MS",aes(x=tmdifvec,y=ageDR2vec_EX,color=Net1Vec))+scale_color_manual(values=ycolors,limits=Y7vec)+geom_text(data=BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_EX,color=Net2Vec),size=10,label="\u25D7",family="Arial Unicode MS")+theme(legend.position = "none") + xlab('Transmodality Difference') + ylab(expression(paste('External Effect (',Delta,R^2[adj],')')))+theme_classic(base_size = 40)+theme(legend.position = "none")+geom_smooth(method='lm',color='black',size=2)
 
 
-g2 <- gam(ageDR2vec_EX ~ te(net2tmvec,net1tmvec,k=3),data = doubleBwAgeCorTMDifDf)
+g2 <- gam(ageDR2vec_EX ~ te(net2tmvec,net1tmvec,k=4),data = doubleBwAgeCorTMDifDf)
 
 gg_tensor(g2)+theme_classic(base_size = 40) +theme(legend.text=element_text(size=30),legend.key.width =unit(3.5,"cm"),legend.title = element_text(size=30))+scale_fill_gradient2(low = "blue",high = "red",mid = "white",midpoint = 0,name=expression(paste('Extern. Effect (',Delta,R^2[adj],')')),guide = guide_colorbar(legend.position='top',title.position="top",ticks.colour = "gray50", ticks.linewidth = 7))+ggtitle("")+xlab("Functional Hierarchy")+ylab("Functional Hierarchy")+geom_vline(xintercept = mean(range(doubleBwAgeCorTMDifDf$net1tmvec)),linetype='dashed',size=1.5)+geom_hline(yintercept = mean(range(doubleBwAgeCorTMDifDf$net1tmvec)),linetype='dashed',size=1.5)+theme(legend.position='top')
 ```
@@ -811,11 +739,19 @@ gg_tensor(g2)+theme_classic(base_size = 40) +theme(legend.text=element_text(size
 # Psychosis
 ggplot(BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_PS))+ geom_text(data=BwAgeCorTMDifDf,size=10,label="\u25D6",family="Arial Unicode MS",aes(x=tmdifvec,y=ageDR2vec_PS,color=Net1Vec))+scale_color_manual(values=ycolors,limits=Y7vec)+geom_text(data=BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_PS,color=Net2Vec),size=10,label="\u25D7",family="Arial Unicode MS")+theme(legend.position = "none") + xlab('Transmodality Difference') + ylab(expression(paste('Psychosis Effect (',Delta,R^2[adj],')')))+theme_classic(base_size = 40)+theme(legend.position = "none")+geom_smooth(method='lm',color='black',size=2)
 
-g2 <- gam(ageDR2vec_PS ~ te(net2tmvec,net1tmvec,k=3),data = doubleBwAgeCorTMDifDf)
+g2 <- gam(ageDR2vec_PS ~ te(net2tmvec,net1tmvec,k=4),data = doubleBwAgeCorTMDifDf)
 
 gg_tensor(g2)+theme_classic(base_size = 40) +theme(legend.text=element_text(size=30),legend.key.width =unit(3.5,"cm"),legend.title = element_text(size=30))+scale_fill_gradient2(low = "blue",high = "red",mid = "white",midpoint = 0,name=expression(paste('Psychosis Effect (',Delta,R^2[adj],')')),guide = guide_colorbar(legend.position='top',title.position="top",ticks.colour = "gray50", ticks.linewidth = 7))+ggtitle("")+xlab("Functional Hierarchy")+ylab("Functional Hierarchy")+geom_vline(xintercept = mean(range(doubleBwAgeCorTMDifDf$net1tmvec)),linetype='dashed',size=1.5)+geom_hline(yintercept = mean(range(doubleBwAgeCorTMDifDf$net1tmvec)),linetype='dashed',size=1.5)+theme(legend.position='top')
 ```
 
+```{r}
+# Anxious Misery
+ggplot(BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_PS))+ geom_text(data=BwAgeCorTMDifDf,size=10,label="\u25D6",family="Arial Unicode MS",aes(x=tmdifvec,y=ageDR2vec_PS,color=Net1Vec))+scale_color_manual(values=ycolors,limits=Y7vec)+geom_text(data=BwAgeCorTMDifDf,aes(x=tmdifvec,y=ageDR2vec_PS,color=Net2Vec),size=10,label="\u25D7",family="Arial Unicode MS")+theme(legend.position = "none") + xlab('Transmodality Difference') + ylab(expression(paste('Psychosis Effect (',Delta,R^2[adj],')')))+theme_classic(base_size = 40)+theme(legend.position = "none")+geom_smooth(method='lm',color='black',size=2)
+
+g2 <- gam(ageDR2vec_AM ~ te(net2tmvec,net1tmvec,k=4),data = doubleBwAgeCorTMDifDf)
+
+gg_tensor(g2)+theme_classic(base_size = 40) +theme(legend.text=element_text(size=30),legend.key.width =unit(3.5,"cm"),legend.title = element_text(size=30))+scale_fill_gradient2(low = "blue",high = "red",mid = "white",midpoint = 0,name=expression(paste('Anx-Mis Effect (',Delta,R^2[adj],')')),guide = guide_colorbar(legend.position='top',title.position="top",ticks.colour = "gray50", ticks.linewidth = 7))+ggtitle("")+xlab("Functional Hierarchy")+ylab("Functional Hierarchy")+geom_vline(xintercept = mean(range(doubleBwAgeCorTMDifDf$net1tmvec)),linetype='dashed',size=1.5)+geom_hline(yintercept = mean(range(doubleBwAgeCorTMDifDf$net1tmvec)),linetype='dashed',size=1.5)+theme(legend.position='top')
+```
 
 ```{r}
 ### does hierarchical devel. differ in psychopathological and norm. groups?
