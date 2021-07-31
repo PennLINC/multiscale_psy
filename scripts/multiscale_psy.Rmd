@@ -484,26 +484,37 @@ for (i in 1:(length(bwAvgCondf)-2)){
 
 ```{r}
 # bring all of the filled-out veectors together into a dataframe for plotting
-bwdf<-data.frame(tmvec,scalesvec,domnetvec,domnetvec17,netpropvec,avg_bw_deltaR2_OV,avg_bw_deltaP_OV,avg_bw_deltaR2_FE,avg_bw_deltaP_FE,avg_bw_deltaR2_AM,avg_bw_deltaP_AM,avg_bw_deltaR2_PS,avg_bw_deltaP_PS,avg_bw_deltaR2_EX,avg_bw_deltaP_EX,avg_bw_deltaR2_age,avg_bw_deltaP_age,occvec)
+bwdf<-data.frame(tmvec,scalesvec,domnetvec,domnetvec17,netpropvec,avg_bw_deltaR2_OV,avg_bw_deltaP_OV,avg_bw_deltaR2_FE,avg_bw_deltaP_FE,avg_bw_deltaR2_AM,avg_bw_deltaP_AM,avg_bw_deltaR2_PS,avg_bw_deltaP_PS,avg_bw_deltaR2_EX,avg_bw_deltaP_EX,avg_bw_deltaR2_age,avg_bw_deltaP_age,occvec,EFDR2vec)
 ```
 
 ```{r}
 # transient chunk
-SplineP_fdr<-p.adjust(avg_bw_deltaP_age,method='fdr')
-NL_sigVec<-logical(464)
-NL_sigVec[SplineP_fdr<0.05]<-TRUE
+library(plot3Drgl)
+bwdf$domnetCols<-as.character(bwdf$domnetvec)
+bwdf$domnetCols[bwdf$domnetCols=='DM']<-"red"
+bwdf$domnetCols[bwdf$domnetCols=='Motor']<-"blue"
+bwdf$domnetCols[bwdf$domnetCols=='FP']<-"orange"
+bwdf$domnetCols[bwdf$domnetCols=='DA']<-"green"
+bwdf$domnetCols[bwdf$domnetCols=='VA']<-"pink"
+bwdf$domnetCols[bwdf$domnetCols=='Visual']<-"purple"
+bwdf$domnetCols[bwdf$domnetCols=='Limbic']<-"grey"
 
-# Map nonsig to grey
-bwdf$domnetvecSig<-'NonSig'
-# sig where CL_vec indicates
-bwdf$domnetvecSig[NL_sigVec]<-as.character(bwdf$domnetvec[NL_sigVec])
-# order for plot legend
-bwdf$domnetvecSig<-as.factor(bwdf$domnetvecSig)
-bwdf$domnetvecSig<-factor(bwdf$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig."))
+plot3d(size=12,x=bwdf$tmvec,y=bwdf$EFDR2vec,col=bwdf$domnetCols,z=bwdf$scalesvec,ylab="EF Effect",xlab="Functional Hierarchy",zlab="Scale")
 
-# stats for fig-lm
-Age_net_lm<-lm(avg_bw_deltaR2_age~tmvec,data=bwdf)
-cor.test(bwdf$tmvec,bwdf$avg_bw_deltaR2_age,method='spearman')
+# For scale-dependent effects, we isolate the most unimodal (SOM_A) and transmodal (DM_B) Yeo17 groups across scales to compare the relative impact of scale upon their age-relations.
+
+# figure 5c stuff - Age Effect * Scale * Transmodality
+# lms for stats
+AM_FP_gam<-gam(avg_bw_deltaR2_AM~s(scalesvec,k=3),data=bwdf[bwdf$domnetvec=='FP',])
+EF_FP_gam<-gam(EFDR2vec~s(scalesvec,k=3),data=bwdf[bwdf$domnetvec=='FP',])
+summary(AM_FP_gam)
+summary(EF_FP_gam)
+
+ggplot(data=subset(bwdf,domnetvec=='FP'),aes(scalesvec,avg_bw_deltaR2_AM)) + xlab("# of Networks") + ylab(expression(paste('AM Effect (',Delta,R^2[adj],')'))) +theme_classic(base_size = 28)+
+geom_smooth(data=subset(bwdf,domnetvec=='FP'),method='gam',formula = y~s(x,k=3),size=2)+geom_point(col='orange',size=3)
+
+ggplot(data=subset(bwdf,domnetvec=='FP'),aes(scalesvec,EFDR2vec)) + xlab("# of Networks") + ylab(expression(paste('EF Effect (',Delta,R^2[adj],')'))) +theme_classic(base_size = 28)+
+geom_smooth(data=subset(bwdf,domnetvec=='FP'),method='gam',formula = y~s(x,k=3),size=2)+geom_point(col='orange',size=3)
 ```
 
 ```{r, fig.width=11,fig.height=11}
