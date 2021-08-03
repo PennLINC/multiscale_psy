@@ -703,10 +703,26 @@ bwAvgCon<-matrix(0,790,464)
 # subcort relationships
 
 ### use this block to control which subcort structure
-Subi_s='R_Pallidum'
+Subi_s='R_Thalamus_Proper'
 Sub_s=grep(Subi_s,colnames(masterdf_sub))
+# remove redundant values and autocorrelation (value of 1 for all)
+Subi_s2=paste0(Subi_s,'_',Subi_s)
+Sub_s2=grep(Subi_s2,colnames(masterdf_sub))
+# get location of columns
 intersection=intersect(Sub,Sub_s)
-Sub_df<-masterdf_sub[,intersection]
+# remove two autocorrelation columns
+intersection=setdiff(intersection,Sub_s2)
+# out of subcort-subcort, remove redundant instances
+# (i.e., amy_l_amy_r,amy_r_amy_l)
+# underscore denotes first subCort in colName (i.e., amyg_l_)
+Subi_s_u=paste0(Subi_s,'_')
+SubCortIntersection=intersection[465:516]
+Sub_s_u=grep(Subi_s_u,colnames(masterdf_sub)[SubCortIntersection])
+Non_redundant_subcort_indices<-SubCortIntersection[Sub_s_u]
+Cort_subcort_indices<-intersection[1:464]
+# final intersection
+fintersection=c(Cort_subcort_indices,Non_redundant_subcort_indices)
+Sub_df<-masterdf_sub[,fintersection]
 SubColnames<-colnames(Sub_df)
 ###
 
@@ -744,9 +760,10 @@ for (i in 1:(length(Sub_df)-2)){
 }
 
 # transmodality mappings for networks, null for subcort-subcort
-adaptedtmvec=c(tmvec,rep(10,54))
-adaptedDomnetVec=rep('SubCort',518)
-adaptedDomnetVec[1:464]<-domnetvec
+adaptedtmvec=c(tmvec,rep(8,26))
+adaptedDomnetVec<-domnetvec
+levels(adaptedDomnetVec)<-c(levels(domnetvec),'SubCort')
+adaptedDomnetVec[465:490]=rep('SubCort',26)
 
 # bring all of the filled-out veectors together into a dataframe for plotting
 Sub_S_df<-data.frame(avg_bw_deltaR2_OV,avg_bw_deltaP_OV,avg_bw_deltaR2_EF,avg_bw_deltaP_EF,avg_bw_deltaR2_AM,avg_bw_deltaP_AM,DeltaR2_age,DeltaP_age,adaptedtmvec,adaptedDomnetVec)
@@ -755,7 +772,7 @@ Sub_S_df<-data.frame(avg_bw_deltaR2_OV,avg_bw_deltaP_OV,avg_bw_deltaR2_EF,avg_bw
 Sub_S_df$domnetvecSig<-'NonSig'
 corrected<-p.adjust(avg_bw_deltaP_EF,method='fdr')
 # network-level sig vector
-NL_sigVec<-logical(518)
+NL_sigVec<-logical(490)
 NL_sigVec[corrected<0.05]<-TRUE
 Sub_S_df$domnetvecSig[NL_sigVec]<-as.character(Sub_S_df$adaptedDomnetVec[NL_sigVec])
 
@@ -764,13 +781,13 @@ Sub_S_df$domnetvecSig<-as.factor(Sub_S_df$domnetvecSig)
 Sub_S_df$domnetvecSig<-factor(Sub_S_df$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig","SubCort"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig.","SubCort"))
 
 # for EF
-EF<-ggplot(Sub_S_df,aes(adaptedtmvec,avg_bw_deltaR2_EF)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Functional Hierarchy")+ ylab(expression(paste('EF Effect (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.24), legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)+labs(title=paste(Subi_s))
+EF<-ggplot(Sub_S_df,aes(adaptedtmvec,avg_bw_deltaR2_EF)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80','gray40')) + xlab("Functional Hierarchy")+ ylab(expression(paste('EF Effect (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.24), legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+labs(title=paste(Subi_s))
 
 ### vector for AM sig.
 Sub_S_df$domnetvecSig<-'NonSig'
 corrected<-p.adjust(avg_bw_deltaP_AM,method='fdr')
 # network-level sig vector
-NL_sigVec<-logical(518)
+NL_sigVec<-logical(490)
 NL_sigVec[corrected<0.05]<-TRUE
 Sub_S_df$domnetvecSig[NL_sigVec]<-as.character(Sub_S_df$adaptedDomnetVec[NL_sigVec])
 
@@ -778,7 +795,21 @@ Sub_S_df$domnetvecSig[NL_sigVec]<-as.character(Sub_S_df$adaptedDomnetVec[NL_sigV
 Sub_S_df$domnetvecSig<-as.factor(Sub_S_df$domnetvecSig)
 Sub_S_df$domnetvecSig<-factor(Sub_S_df$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig","SubCort"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig.","SubCort"))
 # for AM
-AM<-ggplot(Sub_S_df,aes(adaptedtmvec,avg_bw_deltaR2_AM)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80')) + xlab("Functional Hierarchy")+ ylab(expression(paste('AM Effect (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.24), legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+geom_smooth(method='lm',color='black',size=3)+labs(title=paste(Subi_s))
+AM<-ggplot(Sub_S_df,aes(adaptedtmvec,avg_bw_deltaR2_AM)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80','gray40')) + xlab("Functional Hierarchy")+ ylab(expression(paste('AM Effect (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.24), legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+labs(title=paste(Subi_s))
+
+# and for age
+Sub_S_df$domnetvecSig<-'NonSig'
+corrected<-p.adjust(DeltaP_age,method='fdr')
+# network-level sig vector
+NL_sigVec<-logical(490)
+NL_sigVec[corrected<0.05]<-TRUE
+Sub_S_df$domnetvecSig[NL_sigVec]<-as.character(Sub_S_df$adaptedDomnetVec[NL_sigVec])
+
+# order for plot legend
+Sub_S_df$domnetvecSig<-as.factor(Sub_S_df$domnetvecSig)
+Sub_S_df$domnetvecSig<-factor(Sub_S_df$domnetvecSig,levels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig","SubCort"),labels=c("Motor","Visual","DA","VA","Limbic","FP","DM","NonSig.","SubCort"))
+# for AM
+AGE<-ggplot(Sub_S_df,aes(adaptedtmvec,DeltaR2_age)) + geom_point(size=6,alpha=.8,aes(color=domnetvecSig))+ scale_color_manual(values=c('#3281ab','#670068','#007500','#b61ad0','#b8cf86','#d77d00','#c1253c','gray80','gray40')) + xlab("Functional Hierarchy")+ ylab(expression(paste('Age Effect (',Delta,R^2[adj],')',sep=''))) +theme_classic(base_size = 40) +guides(color=guide_legend(title="Yeo 7 Overlap"))+theme(plot.margin=margin(b=3,t=.1,l=.1,r=.1, unit='cm'), legend.position=c(.42,-.24), legend.direction = "horizontal",legend.title=element_text(size=30),legend.text=element_text(size=30))+labs(title=paste(Subi_s))
 ```
 
 ```{r}
