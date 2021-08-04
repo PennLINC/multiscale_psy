@@ -2,3 +2,4 @@
 *.sh.o*
 PBP_*
 *.csv
+*.npy
