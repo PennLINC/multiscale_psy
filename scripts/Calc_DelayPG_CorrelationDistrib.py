@@ -8,7 +8,6 @@ from scipy import signal
 from scipy.signal import find_peaks
 from scipy.signal import butter
 from scipy import signal
-import pandas as pd
 from numpy import genfromtxt
 
 #### construct bandpass filter, load in nonSubj TS data
@@ -67,7 +66,7 @@ for s in range(len(subjs)):
 		# end for each bin
 
 	# load in global signal
-	ConfFP='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/' + str(subjs[s]) + '_task-REST2_acq-RL_desc-confounds_timeseries.tsv'
+	ConfFP='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST2_acq-RL_desc-confounds_timeseries.tsv'
 	Conf=np.genfromtxt(ConfFP,delimiter="\t",names=True)
 	GS=Conf['global_signal']
 	# filter the global signal (bandpass)
@@ -108,7 +107,8 @@ for s in range(len(subjs)):
 	for i in range(delayMatrix_thresh.shape[1]):
 		CorDistr[0,i], _ =stats.pearsonr(delayMatrix_thresh[:,i],np.arange(100))
 
-	PGD_arr.append(CorDistr)
+	PGD_arr=np.array([PGD_arr,CorDistr])
 	print(subjs[s])
 
-np.savetxt('PGD_arr.csv',PGD_arr,delimiter=",")
+PGD_arr=PGD_arr.flatten()
+np.save('PGD_arr',PGD_arr)

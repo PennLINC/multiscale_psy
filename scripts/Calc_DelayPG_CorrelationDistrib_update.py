@@ -32,7 +32,7 @@ PGD_arr=[]
 
 #### For each subject
 ### (for a few subjects first)
-for s in range(5):
+for s in range(1):
 	print(subjs[s])
 	# load in time series
 	filepath='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST1_acq-RL_space-fsLR_den-91k_bold.dtseries.nii'
@@ -71,7 +71,7 @@ for s in range(5):
 
 	print('done with PG binning, signal averaging')
 	# load in global signal
-	ConfFP='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/' + str(subjs[s]) + '_task-REST2_acq-RL_desc-confounds_timeseries.tsv'
+	ConfFP='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST2_acq-RL_desc-confounds_timeseries.tsv'
 	Conf=np.genfromtxt(ConfFP,delimiter="\t",names=True)
 	GS=Conf['global_signal']
 	# filter the global signal (bandpass)
@@ -113,7 +113,8 @@ for s in range(5):
 	for i in range(delayMatrix_thresh.shape[1]):
 		CorDistr[0,i], _ =stats.pearsonr(delayMatrix_thresh[:,i],np.arange(100))
 
-	PGD_arr.append(CorDistr)
+	PGD_arr=np.array([PGD_arr,CorDistr])
 	print(subjs[s])
 
-np.savetxt('PGD_arr.csv',PGD_arr,delimiter=",")
+PGD_arr=PGD_arr.flatten()
+np.save('PGD_arr.csv',PGD_arr)
