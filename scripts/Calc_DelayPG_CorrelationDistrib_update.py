@@ -8,7 +8,6 @@ from scipy import signal
 from scipy.signal import find_peaks
 from scipy.signal import butter
 from scipy import signal
-import pandas as pd
 from numpy import genfromtxt
 
 #### construct bandpass filter, load in nonSubj TS data
@@ -32,7 +31,7 @@ PGD_arr=[]
 
 #### For each subject
 ### (for a few subjects first)
-for s in range(1):
+for s in range(16):
 	print(subjs[s])
 	# load in time series
 	filepath='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST1_acq-RL_space-fsLR_den-91k_bold.dtseries.nii'
@@ -71,7 +70,7 @@ for s in range(1):
 
 	print('done with PG binning, signal averaging')
 	# load in global signal
-	ConfFP='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST2_acq-RL_desc-confounds_timeseries.tsv'
+	ConfFP='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST1_acq-RL_desc-confounds_timeseries.tsv'
 	Conf=np.genfromtxt(ConfFP,delimiter="\t",names=True)
 	GS=Conf['global_signal']
 	# filter the global signal (bandpass)
@@ -100,7 +99,10 @@ for s in range(1):
 			# determine distance from GS peak
 			distanceFGSP=peak-GS_peak
 			# if peak exists, add to matrix
-			if len(peak) !=0:
+			if ((len(peak) !=0) and (len(GS_peak) !=0)):
+				print(distanceFGSP)
+				print(peak)
+				print(GS_peak)
 				delayMatrix[b,t]=distanceFGSP
 			else:
 				delayMatrix[b,t]=999
@@ -113,8 +115,8 @@ for s in range(1):
 	for i in range(delayMatrix_thresh.shape[1]):
 		CorDistr[0,i], _ =stats.pearsonr(delayMatrix_thresh[:,i],np.arange(100))
 
-	PGD_arr=np.array([PGD_arr,CorDistr])
+	#PGD_arr=np.array([PGD_arr,CorDistr])
+	PGD_arr+=list(CorDistr.flatten())
 	print(subjs[s])
 
-PGD_arr=PGD_arr.flatten()
 np.save('PGD_arr.csv',PGD_arr)

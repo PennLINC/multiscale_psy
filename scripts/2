@@ -30,7 +30,9 @@ subjs=subjs.splitlines()
 PGD_arr=[]
 
 #### For each subject
-for s in range(len(subjs)):
+### (for a few subjects first)
+for s in range(2):
+	print(subjs[s])
 	# load in time series
 	filepath='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST1_acq-RL_space-fsLR_den-91k_bold.dtseries.nii'
 	subjData=nb.load(filepath)
@@ -46,6 +48,7 @@ for s in range(len(subjs)):
 		ProcTS[:,x]=((ProcTS[:,x]-Avg)/SD)
 		# end for each vertex
 	
+	print('done with vertex filt/norm')
 	# initialize empty array to input proc'ed bin'ed data
 	ProcTS_bins=np.zeros((1200,100))
 	# bin vertices at same position on gradient
@@ -65,8 +68,9 @@ for s in range(len(subjs)):
 		ProcTS_bins[:,b]=meanSig
 		# end for each bin
 
+	print('done with PG binning, signal averaging')
 	# load in global signal
-	ConfFP='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST1_acq-RL_desc-confounds_timeseries.tsv'
+	ConfFP='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST2_acq-RL_desc-confounds_timeseries.tsv'
 	Conf=np.genfromtxt(ConfFP,delimiter="\t",names=True)
 	GS=Conf['global_signal']
 	# filter the global signal (bandpass)
@@ -96,10 +100,14 @@ for s in range(len(subjs)):
 			distanceFGSP=peak-GS_peak
 			# if peak exists, add to matrix
 			if ((len(peak) !=0) and (len(GS_peak) !=0)):
+				print(distanceFGSP)
+				print(peak)
+				print(GS_peak)
 				delayMatrix[b,t]=distanceFGSP
 			else:
 				delayMatrix[b,t]=999
 
+	print('done with delay matrix construction')
 	# extract columns where each percentile bin had a peak
 	delayMatrix_thresh = delayMatrix[:,np.all(delayMatrix != 999, axis=0)]
 	# calculate distribution of correlations of (PG location, trough offset) for each interval
@@ -112,4 +120,4 @@ for s in range(len(subjs)):
 	print(subjs[s])
 
 PGD_arr=PGD_arr.flatten()
-np.save('PGD_arr',PGD_arr)
+np.save('PGD_arr.csv',PGD_arr)
