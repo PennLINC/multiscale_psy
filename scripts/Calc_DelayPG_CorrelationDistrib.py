@@ -23,7 +23,7 @@ b, a = butter(2,[desired_low,desired_high],'band')
 # load in principal gradient
 PG=nb.load('/cbica/projects/pinesParcels/GS/hcp.gradients.dscalar.nii')
 # load in subject list
-subjs=open('/cbica/projects/pinesParcels/GS/fn.txt')
+subjs=open('/cbica/projects/pinesParcels/GS/fn3.txt')
 subjs=subjs.read()
 subjs=subjs.splitlines()
 # initialize big array for distribution of all PG delay correlations

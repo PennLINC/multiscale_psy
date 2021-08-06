@@ -23,7 +23,7 @@ b, a = butter(2,[desired_low,desired_high],'band')
 # load in principal gradient
 PG=nb.load('/cbica/projects/pinesParcels/GS/hcp.gradients.dscalar.nii')
 # load in subject list
-subjs=open('/cbica/projects/pinesParcels/GS/fn.txt')
+subjs=open('/cbica/projects/pinesParcels/GS/fn3.txt')
 subjs=subjs.read()
 subjs=subjs.splitlines()
 # initialize big array for distribution of all PG delay correlations
@@ -31,7 +31,7 @@ PGD_arr=[]
 
 #### For each subject
 ### (for a few subjects first)
-for s in range(16):
+for s in range(40):
 	print(subjs[s])
 	# load in time series
 	filepath='/cbica/home/bertolem/xcp_hcp/fmriprepdir/' + str(subjs[s]) + '/func/' + str(subjs[s]) + '_task-REST1_acq-RL_space-fsLR_den-91k_bold.dtseries.nii'
@@ -119,4 +119,4 @@ for s in range(16):
 	PGD_arr+=list(CorDistr.flatten())
 	print(subjs[s])
 
-np.save('PGD_arr.csv',PGD_arr)
+np.save('PGD_arr_160.csv',PGD_arr)
